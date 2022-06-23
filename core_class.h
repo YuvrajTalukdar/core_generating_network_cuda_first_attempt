@@ -41,6 +41,21 @@ struct converted_data_pack
     bool corupt_pack=false;
 };
 
+struct converted_data_pack_cuda
+{
+    int firing_neuron_index;
+    float firing_label;
+    bool corupt_pack=false;
+};
+
+struct converted_data_pack_f_nf_cuda
+{
+    float* firing_data_arr;
+    float* not_firing_data_arr;
+    int firing_data_height,not_firing_data_height;
+    int horizontal_size;
+};
+
 struct conflicting_data_id
 {
     vector<int> id;
@@ -153,9 +168,9 @@ class simplex_solver_data_preparation_class
     static void cdp_viewer(converted_data_pack* cdp);
     void lp_solver();
     bool cyclic_bug_present();
-    simplex_solver_data_preparation_class(vector<converted_data_pack> &cdps,datapack_structure_defination* ds,ann* network1);
 };
-//int training_step_counter=0;
+
+void simplex_solver(vector<converted_data_pack> &cdps,datapack_structure_defination &ds,ann &network1);
 
 struct network_structure_defination{
     int no_of_input_neuron=0;
@@ -193,8 +208,6 @@ class core_class
     void big_c_datapack_handler(vector<converted_data_pack> &cdp);//passing the vector by reference //this function might be a temporary offer //this is for preventing 0:0 bug
 
     int size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapacks);
-
-    void c_data_packs_division_for_multi_threading(vector<vector<converted_data_pack>> &c_datapacks_vector,vector<converted_data_pack> &c_datapacks,int no_of_threads);
 
     nn_core_data_package_class test_data;
 

@@ -190,7 +190,7 @@ class ann{
         vector<float> summation_vec;
         vector<int> total_no_of_fires_of_paths;
         total_no_of_fires_of_paths.clear();
-        bool sure_positive_found=false,second_neuron_fired_status=false;
+        //bool sure_positive_found=false,second_neuron_fired_status=false;
         int no_of_neurons_fired=0;
         for(int a=0;a<output_neuron_size();a++)
         {

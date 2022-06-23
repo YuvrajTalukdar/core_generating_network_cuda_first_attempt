@@ -43,7 +43,7 @@ void breaker(raw_data* rw_data,string line)
         {
             if(line.at(a)==',')
             {
-                float val = atof(num_char)*100;//*100  
+                float val = atof(num_char);//*100  
                 //cout<<val<<endl;
                 one_row_of_data.push_back(val);
                 for(int b=0;b<20;b++){
@@ -55,7 +55,7 @@ void breaker(raw_data* rw_data,string line)
             ch[1]='\0';
             strcat(num_char,ch);
         }
-        one_row_of_data.push_back(atof(num_char)*100);//*100
+        one_row_of_data.push_back(atof(num_char));//*100
         rw_data->rawData.push_back(one_row_of_data);
     }
 }

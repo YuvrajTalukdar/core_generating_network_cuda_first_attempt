@@ -1068,14 +1068,6 @@ void simplex_solver_data_preparation_class::print_message()
     }
 }
 
-simplex_solver_data_preparation_class::simplex_solver_data_preparation_class(vector<converted_data_pack> &cdps,datapack_structure_defination* ds,ann* network1)
-{
-    network=network1;
-    data_structure=ds;
-    lpp_solver1.set_training_settings(ds->lower_firing_constrain_rhs,ds->upper_not_firing_constrain_rhs); 
-    cdp=cdps;
-}
-
 //core_class
 
 vector<neuron> core_class::propagate(vector<float> input_attributes_value)
@@ -1543,45 +1535,12 @@ void core_class::train_core()
     message="\ntotal no of c_data_packs after big c_datapacks handling= "+to_string(c_datapacks.size());
     print_message();
     //this is the place for parallelization process.
-    vector<vector<converted_data_pack>> c_datapacks_vector;
-    message.clear();
-    message="\narranging c_datapacks for "+to_string(no_of_threads)+" threads..........";
-    print_message();
-    c_data_packs_division_for_multi_threading(c_datapacks_vector,c_datapacks,no_of_threads);
-    point1:
-    if(no_of_threads!=c_datapacks_vector.size())
-    {
-        message.clear();
-        message="\nSetting the no_of_threads to "+to_string(c_datapacks_vector.size());
-        print_message();
-        no_of_threads=c_datapacks_vector.size();
-    }
-    //memory_optimization4 : turn  vector<simplex_solver_data_preparation_class> to  vector<simplex_solver_data_preparation_class*>       
-    vector<simplex_solver_data_preparation_class> lpp_solver_vec;
-    for(int a=0;a<c_datapacks_vector.size();a++)
-    {
-        simplex_solver_data_preparation_class lpp_solver=simplex_solver_data_preparation_class(c_datapacks_vector[a],&ds,&network1);//initializing the obj of the class   
-        lpp_solver_vec.push_back(lpp_solver);
-    }
-    vector<thread> thread_vec(no_of_threads);
-    //thread* progress_diaplay_thread;
-    message.clear();
-    message=" lpp_solver_vec size="+to_string(lpp_solver_vec.size());
-    print_message();
-    //lpp solvers will start now.........
-    for(int a=0;a<no_of_threads;a++)
-    {   thread_vec[a]=thread(&simplex_solver_data_preparation_class::lp_solver,lpp_solver_vec[a]);}
-    //int progress_bar_error;
-    //if(pds==true)
-    //{   progress_diaplay_thread=new thread(&core_class::display_training_progress,this);}
-    for(int a=0;a<no_of_threads;a++)
-    {   thread_vec[a].join();}
-    lpp_solver_vec.clear();
-    thread_vec.clear();
-    c_datapacks.clear();
-    c_datapacks_vector.clear();
-    //if(pds==true)
-    //{   progress_diaplay_thread->join();}
+    //c_datapacks are ready for processing here.
+    simplex_solver(c_datapacks,ds,network1);
+    cout<<"\ncheck1";
+    int gh;cin>>gh;
+    //for(int a=0;a<no_of_threads;a++)
+    //{   thread_vec[a]=thread(&simplex_solver_data_preparation_class::lp_solver,lpp_solver_vec[a]);}
 }
 
 int core_class::size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapacks)
@@ -1590,49 +1549,6 @@ int core_class::size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapa
     for(int a=0;a<c_datapacks.size();a++)
     {   sum+=c_datapacks[a].firing_data.size();}
     return sum;
-}
-
-void core_class::c_data_packs_division_for_multi_threading(vector<vector<converted_data_pack>> &c_datapacks_vector,vector<converted_data_pack> &c_datapacks,int no_of_threads)
-{
-    int total_data=0;
-    for(int a=0;a<c_datapacks.size();a++)
-    {   total_data+=c_datapacks[a].firing_data.size();}
-    int data_for_each_thread=total_data/no_of_threads;
-    vector<converted_data_pack> c_datapacks_new;
-    c_datapacks_new.clear();
-    c_datapacks_vector.clear();
-    message.clear();
-    message="\nno of c_datapacks= "+to_string(c_datapacks.size());
-    print_message();
-    for(int a=0;a<no_of_threads;a++)
-    {
-        int b=c_datapacks.size()-1;
-        if(b<0)
-        {   continue;}
-        while(size_of_c_datapacks_vector(c_datapacks_new)<data_for_each_thread)
-        {                
-            c_datapacks_new.push_back(c_datapacks[b]);
-            c_datapacks.erase(c_datapacks.begin()+b);
-            b--;
-            if(b<0)
-            {   break;}
-        }
-        c_datapacks_vector.push_back(c_datapacks_new);
-        c_datapacks_new.clear();
-    }
-    int sum=0;
-    for(int a=0;a<c_datapacks_vector.size();a++)
-    {   sum+=c_datapacks_vector[a].size();
-        message.clear();
-        message="\na= "+to_string(a)+" size= "+to_string(c_datapacks_vector[a].size());
-        print_message();
-    }
-    message.clear();
-    message="\nno of c_datapacks in c_datapacks_vector= "+to_string(sum);
-    print_message();
-    message.clear();
-    message="\nc_data_packs size= "+to_string(c_datapacks.size());
-    print_message();
 }
 
 void core_class::network_structure_modifier()
