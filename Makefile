@@ -3,7 +3,7 @@ CC=nvcc
 LIBS= -lpthread
 # use -Wall for displaying all warnings
 CXXFLAGS= -rdc=true -arch=sm_86 -O3 -Xptxas -O3 -std=c++17
-CXXFLAGS2= -rdc=true -arch=sm_86 -std=c++17 -g
+CXXFLAGS2= -rdc=true -arch=sm_86 -std=c++17 -g -G
 all: a.out
 
 a.out: main.o genetic_algorithm.o core_class.o menu.o input_raw_to_prepared.o segment_class.o simplex_solver.o
@@ -54,7 +54,7 @@ genetic_algorithm_debug.o: genetic_algorithm.cpp
 	$(CC) $(CXXFLAGS2) $(LIBS) -c genetic_algorithm.cpp -o genetic_algorithm_debug.o
 
 simplex_solver_debug.o: simplex_solver.cu
-	$(CC) $(CXXFLAGS2) $(LIBS) -c simplex_solver.cu
+	$(CC) $(CXXFLAGS2) $(LIBS) -c simplex_solver.cu -o simplex_solver_debug.o
 
 clean:
 	rm -rf *o a.out a.debug

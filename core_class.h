@@ -41,26 +41,37 @@ struct converted_data_pack
     bool corupt_pack=false;
 };
 
-struct converted_data_pack_cuda
-{
-    int firing_neuron_index;
-    float firing_label;
-    bool corupt_pack=false;
-};
-
-struct converted_data_pack_f_nf_cuda
-{
-    float* firing_data_arr;
-    float* not_firing_data_arr;
-    int firing_data_height,not_firing_data_height;
-    int horizontal_size;
-};
-
 struct conflicting_data_id
 {
     vector<int> id;
     bool conflict_id_present=false;
 };
+
+struct id
+{
+    bool slack=false,basic=false,z=false,rhs=false,theta=false;
+    int id;
+};
+
+struct simplex_table_cuda
+{
+    id* c_id;//no_of_columns-rhs-z
+    int c_id_size;
+    id* r_id; //no_of_rows-z_row
+    int r_id_size;
+    float* basic_var; //no_of_column-slack_var-z-rhs-theta*no_of_rows-z_row
+    int basic_var_size_row,basic_var_size_col;
+    float* slack_var; //no_of_columns-basic_var-rhs-theta*no_of_rows-z_row
+    int slack_var_size_row,slack_var_size_col;
+    double* rhs;//no_of_rows-z_row//actual double
+    int rhs_size;
+    long double* theta;//no_of_rows-z_row//actual long double
+    int theta_size;
+};
+
+void display_st(simplex_table_cuda *st);
+
+void simplex_solver(simplex_table_cuda *st);
 
 class modified_simplex_solver{
     private:
@@ -69,10 +80,6 @@ class modified_simplex_solver{
     float upper_not_firing_constrain_rhs; //10
 
     string message;
-    struct id{
-            bool slack=false,basic=false,z=false,rhs=false,theta=false;
-            int id;
-        };
 
     struct simplex_table
     {
@@ -100,7 +107,7 @@ class modified_simplex_solver{
 
         bool termination_condition_checker(simplex_table* st);
 
-        void display_st(simplex_table st);
+        void display_st(simplex_table_cuda &st);
 
         long double round_to_zero(long double input);
         struct buffer
@@ -130,8 +137,6 @@ class modified_simplex_solver{
         void start(simplex_table* st);
 
     }feasible_solution_calculator;
-
-    void display_st(simplex_table st);
     
     void print_message();
 
@@ -168,9 +173,9 @@ class simplex_solver_data_preparation_class
     static void cdp_viewer(converted_data_pack* cdp);
     void lp_solver();
     bool cyclic_bug_present();
+    simplex_solver_data_preparation_class(vector<converted_data_pack> &cdps,datapack_structure_defination* ds,ann* network1);
 };
-
-void simplex_solver(vector<converted_data_pack> &cdps,datapack_structure_defination &ds,ann &network1);
+//int training_step_counter=0;
 
 struct network_structure_defination{
     int no_of_input_neuron=0;
@@ -208,6 +213,8 @@ class core_class
     void big_c_datapack_handler(vector<converted_data_pack> &cdp);//passing the vector by reference //this function might be a temporary offer //this is for preventing 0:0 bug
 
     int size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapacks);
+
+    void c_data_packs_division_for_multi_threading(vector<vector<converted_data_pack>> &c_datapacks_vector,vector<converted_data_pack> &c_datapacks,int no_of_threads);
 
     nn_core_data_package_class test_data;
 

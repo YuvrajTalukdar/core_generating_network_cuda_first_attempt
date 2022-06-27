@@ -4,6 +4,75 @@ using namespace std;
 
 
 //modified_simplex_solver::make_solution_feasible
+void display_st(simplex_table_cuda *st)
+{
+    fstream file1("simplex_table.csv",ios::out);
+    file1<<",";
+    for(int a=0;a<st->c_id_size;a++)
+    {
+        if(st->c_id[a].basic==true)
+        {
+            file1<<"c"<<st->c_id[a].id<<",";
+        }
+        else if(st->c_id[a].slack==true)
+        {
+            file1<<"s"<<st->c_id[a].id<<",";
+        }
+        else if(st->c_id[a].z==true)
+        {
+            file1<<"z"<<",";
+        }
+        else if(st->c_id[a].rhs==true)
+        {
+            file1<<"rhs"<<",";
+        }
+        else if(st->c_id[a].theta==true)
+        {
+            file1<<"theta,";
+        }
+    }
+    file1<<"\n";
+    for(int a=0;a<st->r_id_size;a++)
+    {
+        if(st->r_id[a].basic==true)
+        {
+            file1<<"c"<<st->r_id[a].id<<",";
+        }
+        else if(st->r_id[a].slack==true)
+        {
+            file1<<"s"<<st->r_id[a].id<<",";
+        }
+        else if(st->r_id[a].z==true)
+        {
+            file1<<"z"<<",";
+        }
+        else if(st->r_id[a].rhs==true)
+        {
+            file1<<"rhs"<<",";
+        }
+
+
+        for(int c=0;c<st->basic_var_size_col;c++)
+        {
+            file1<<st->basic_var[a*st->basic_var_size_row+c]<<",";
+        }
+        for(int c=0;c<st->slack_var_size_col;c++)
+        {
+            file1<<st->slack_var[a*st->slack_var_size_row+c]<<",";
+        }
+        file1/*<<st.z_col[a]<<","*/<<st->rhs[a]<<","/*<<st->theta[a]<<","*/;
+
+        file1<<"\n";
+    }
+    /*file1<<"z,";
+    for(int a=0;a<st.z_row.size();a++)
+    {
+        file1<<st.z_row[a]<<",";
+    }*/
+
+    file1.close();
+}
+
 bool modified_simplex_solver::make_solution_feasible::termination_condition_checker(simplex_table* st)
 {
     bool status=true;
@@ -25,75 +94,6 @@ bool modified_simplex_solver::make_solution_feasible::termination_condition_chec
         //cout<<"\n\ntraining ended check table";
     }
     return status;
-}
-
-void modified_simplex_solver::make_solution_feasible::display_st(simplex_table st)
-{
-    fstream file1("simplex_table.csv",ios::out);
-    file1<<",";
-    for(int a=0;a<st.c_id.size();a++)
-    {
-        if(st.c_id[a].basic==true)
-        {
-            file1<<"c"<<st.c_id[a].id<<",";
-        }
-        else if(st.c_id[a].slack==true)
-        {
-            file1<<"s"<<st.c_id[a].id<<",";
-        }
-        else if(st.c_id[a].z==true)
-        {
-            file1<<"z"<<",";
-        }
-        else if(st.c_id[a].rhs==true)
-        {
-            file1<<"rhs"<<",";
-        }
-        else if(st.c_id[a].theta==true)
-        {
-            file1<<"theta,";
-        }
-    }
-    file1<<"\n";
-    for(int a=0;a<st.r_id.size();a++)
-    {
-        if(st.r_id[a].basic==true)
-        {
-            file1<<"c"<<st.r_id[a].id<<",";
-        }
-        else if(st.r_id[a].slack==true)
-        {
-            file1<<"s"<<st.r_id[a].id<<",";
-        }
-        else if(st.r_id[a].z==true)
-        {
-            file1<<"z"<<",";
-        }
-        else if(st.r_id[a].rhs==true)
-        {
-            file1<<"rhs"<<",";
-        }
-
-
-        for(int c=0;c<st.basic_var[a].size();c++)
-        {
-            file1<<st.basic_var[a][c]<<",";
-        }
-        for(int c=0;c<st.slack_var[a].size();c++)
-        {
-            file1<<st.slack_var[a][c]<<",";
-        }
-        file1/*<<st.z_col[a]<<","*/<<st.rhs[a]<<","<<st.theta[a]<<",";
-
-        file1<<"\n";
-    }
-    /*file1<<"z,";
-    for(int a=0;a<st.z_row.size();a++)
-    {
-        file1<<st.z_row[a]<<",";
-    }*/
-
-    file1.close();
 }
 
 long double modified_simplex_solver::make_solution_feasible::round_to_zero(long double input)
@@ -459,75 +459,6 @@ void modified_simplex_solver::make_solution_feasible::start(simplex_table* st)
 {   pivot_element_finder(st);}
 
 //modified_simplex_solver
-void modified_simplex_solver::display_st(simplex_table st)
-{
-    fstream file1("simplex_table.csv",ios::out);
-    file1<<",";
-    for(int a=0;a<st.c_id.size();a++)
-    {
-        if(st.c_id[a].basic==true)
-        {
-            file1<<"c"<<st.c_id[a].id<<",";
-        }
-        else if(st.c_id[a].slack==true)
-        {
-            file1<<"s"<<st.c_id[a].id<<",";
-        }
-        else if(st.c_id[a].z==true)
-        {
-            file1<<"z"<<",";
-        }
-        else if(st.c_id[a].rhs==true)
-        {
-            file1<<"rhs"<<",";
-        }
-        else if(st.c_id[a].theta==true)
-        {
-            file1<<"theta,";
-        }
-    }
-    file1<<"\n";
-    for(int a=0;a<st.r_id.size();a++)
-    {
-        if(st.r_id[a].basic==true)
-        {
-            file1<<"c"<<st.r_id[a].id<<",";
-        }
-        else if(st.r_id[a].slack==true)
-        {
-            file1<<"s"<<st.r_id[a].id<<",";
-        }
-        else if(st.r_id[a].z==true)
-        {
-            file1<<"z"<<",";
-        }
-        else if(st.r_id[a].rhs==true)
-        {
-            file1<<"rhs"<<",";
-        }
-
-
-        for(int c=0;c<st.basic_var[a].size();c++)
-        {
-            file1<<st.basic_var[a][c]<<",";
-        }
-        for(int c=0;c<st.slack_var[a].size();c++)
-        {
-            file1<<st.slack_var[a][c]<<",";
-        }
-        file1/*<<st.z_col[a]<<","*/<<st.rhs[a]<<","<<st.theta[a]<<",";
-
-        file1<<"\n";
-    }
-    /*file1<<"z,";
-    for(int a=0;a<st.z_row.size();a++)
-    {
-        file1<<st.z_row[a]<<",";
-    }*/
-
-    file1.close();
-}
-
 bool modified_simplex_solver::check_for_corrupt_cdp(converted_data_pack* cdp)
 {
     try{
@@ -549,9 +480,7 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
         message="\n\ncdp->firing_data.size()= "+to_string(cdp->firing_data.size());
         print_message();
     }
-    id temp_id;
-    simplex_table* st=new simplex_table();
-    st->c_id.clear();
+    simplex_table_cuda *st=new simplex_table_cuda();
     bool corrupt_cdp=check_for_corrupt_cdp(cdp);
     if(corrupt_cdp==true)
     {
@@ -566,45 +495,50 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
     }
     else if(corrupt_cdp==false)
     {   
+        st->c_id_size=cdp->firing_data[0].size()*2+cdp->firing_data.size()+cdp->not_firing_data.size()+3;
+        st->c_id=(id*)malloc(sizeof(id)*st->c_id_size);
         for(int a=0;a<cdp->firing_data[0].size()*2;a++)
         {
+            id temp_id;
             temp_id.basic=true;
             temp_id.slack=false;
             temp_id.z=false;
             temp_id.rhs=false;
             temp_id.theta=false;
             temp_id.id=a;
-            st->c_id.push_back(temp_id);
+            st->c_id[a]=temp_id;
         }
         int slack_id=cdp->firing_data[0].size()*2;
-        for(int a=cdp->firing_data[0].size();a<(cdp->firing_data[0].size()+cdp->firing_data.size()+cdp->not_firing_data.size());a++)
+        for(int a=0;a<(cdp->firing_data.size()+cdp->not_firing_data.size());a++)
         {
+            id temp_id;
             temp_id.slack=true;
             temp_id.basic=false;
             temp_id.z=false;
             temp_id.theta=false;
             temp_id.rhs=false;
             temp_id.id=slack_id;
-            st->c_id.push_back(temp_id);
+            st->c_id[slack_id]=temp_id;
             slack_id++;
         }
-
+        id temp_id;
         temp_id.slack=false;
         temp_id.basic=false;
         temp_id.rhs=false;
         temp_id.z=true;
         temp_id.theta=false;
         temp_id.id=slack_id;
-        st->c_id.push_back(temp_id);
+        st->c_id[slack_id]=temp_id;
         slack_id++;
 
-        temp_id.slack=false;
-        temp_id.basic=false;
-        temp_id.rhs=true;
-        temp_id.z=false;
-        temp_id.theta=false;
-        temp_id.id=slack_id;
-        st->c_id.push_back(temp_id);
+        id temp_id2;
+        temp_id2.slack=false;
+        temp_id2.basic=false;
+        temp_id2.rhs=true;
+        temp_id2.z=false;
+        temp_id2.theta=false;
+        temp_id2.id=slack_id;
+        st->c_id[slack_id]=temp_id2;
 
         temp_id.slack=false;
         temp_id.basic=false;
@@ -612,87 +546,75 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
         temp_id.z=false;
         temp_id.theta=true;
         temp_id.id=slack_id;
-        st->c_id.push_back(temp_id);
+        st->c_id[slack_id+1]=temp_id2;
 
-        st->r_id.clear();
-        for(int a=0;a<st->c_id.size();a++)
+        st->r_id_size=cdp->firing_data.size()+cdp->not_firing_data.size();
+        st->r_id=(id*)calloc(st->r_id_size,sizeof(id));
+        int b=0;
+        for(int a=0;a<st->c_id_size;a++)
         {
-            if(st->c_id[a].slack==true)
+            if(st->c_id[a].slack==true)//check if square bracket works
             {
-                st->r_id.push_back(st->c_id[a]);
+                st->r_id[b]=(st->c_id[a]);
+                b++;
             }
         }
 
-        st->slack_var.clear();
-        st->basic_var.clear();
-        vector<float> temp;
-        int x;
+        st->rhs_size=cdp->firing_data.size()+cdp->not_firing_data.size();
+        st->rhs=(double*)malloc(sizeof(double)*st->rhs_size);
+
+        st->basic_var_size_row=cdp->firing_data.size()+cdp->not_firing_data.size();
+        st->basic_var_size_col=cdp->firing_data[0].size()*2;
+        st->basic_var=(float*)malloc(sizeof(float)*st->basic_var_size_col*st->basic_var_size_row);
+
+        st->slack_var_size_row=st->basic_var_size_row;
+        st->slack_var_size_col=st->r_id_size;
+        st->slack_var=(float*)malloc(sizeof(float)*st->slack_var_size_col*st->slack_var_size_row);
+
         for(int a=0;a<cdp->firing_data.size();a++)
         {
-            temp.clear();
             //entering basic variable data
             for(int b=0;b<cdp->firing_data[a].size();b++)
-            {   temp.push_back(cdp->firing_data[a][b]);
-                temp.push_back(cdp->firing_data[a][b]-2*cdp->firing_data[a][b]);
+            {   
+                st->basic_var[a*cdp->firing_data[a].size()*2+b*2]=cdp->firing_data[a][b];
+                st->basic_var[a*cdp->firing_data.size()*2+b*2+1]=cdp->firing_data[a][b]*-1;
             }
-            st->basic_var.push_back(temp);
-            temp.clear();
             //entering slack var data
-            for(int b=0;b<st->r_id.size();b++)
+            for(int b=0;b<st->r_id_size;b++)
             {
                 if(b==a)
-                {   temp.push_back(-1);x=b;}
+                {   st->slack_var[a*st->slack_var_size_row+b]=-1;}
                 else
-                {   temp.push_back(0);}
+                {   st->slack_var[a*st->basic_var_size_row+b]=0;}
             }
-            //temp.push_back(0);//for z
-            //temp.push_back(cdp->lower_firing_constrain_rhs);
-            st->slack_var.push_back(temp);
-
-            //st->z_col.push_back(0);
-            st->rhs.push_back(lower_firing_constrain_rhs); //modification needs to be done here
+            st->rhs[a]=(lower_firing_constrain_rhs); //modification needs to be done here
         }
+        int x1=cdp->firing_data.size();
         for(int a=0;a<cdp->not_firing_data.size();a++)
         {
-            temp.clear();
             //entering basic variable data
             for(int b=0;b<cdp->not_firing_data[a].size();b++)
-            {   temp.push_back(cdp->not_firing_data[a][b]);
-                temp.push_back(cdp->not_firing_data[a][b]-2*cdp->not_firing_data[a][b]);
+            {   
+                st->basic_var[x1*cdp->not_firing_data[a].size()*2+b*2]=cdp->not_firing_data[a][b];
+                st->basic_var[x1*cdp->not_firing_data[a].size()*2+b*2+1]=cdp->not_firing_data[a][b]*-1;
             }
-            st->basic_var.push_back(temp);
-            temp.clear();
             //entering slack var data
-            for(int b=0;b<st->r_id.size();b++)
+            for(int b=0;b<st->r_id_size;b++)
             {
-                if((b)==(a+x+1))
-                {   temp.push_back(1);}
+                if((b)==(x1))
+                {   st->slack_var[(x1)*st->slack_var_size_row+b]=1;}
                 else
-                {   temp.push_back(0);}
+                {   st->slack_var[(x1)*st->slack_var_size_row+b]=0;}
             }
-            //temp.push_back(0);//for z
-            //temp.push_back(cdp->upper_not_firing_constrain_rhs);
-            st->slack_var.push_back(temp);
-
-            //st->z_col.push_back(0);
-            st->rhs.push_back(upper_not_firing_constrain_rhs); //modification needs to be done here
+            st->rhs[x1]=(upper_not_firing_constrain_rhs); //modification needs to be done here
+            x1++;
         }
-        /*
-        st->z_row.clear();
-        //entering z row data
-        for(int a=0;a<cdp->objective_function_coefficients.size();a++)
-        {
-            st->z_row.push_back(cdp->objective_function_coefficients[a]);
-            st->z_row.push_back(cdp->objective_function_coefficients[a]-2*cdp->objective_function_coefficients[a]);
-        }
-        for(int a=0;a<st->r_id.size();a++)
-        {   st->z_row.push_back(0);}
-        st->z_row.push_back(1);// co_orodianted (z,z)
-        st->z_row.push_back(0);//(z,rhs)
-        /*/
-        //needs modification
-        feasible_solution_calculator.start(st);
-        //cout<<"data size2= "<<cdp->firing_data.size()<<endl;
+        //launch cuda kernel here
+        simplex_solver(st);
+        display_st(st);
+        cout<<"\ndone!";
+        int gh;cin>>gh;
+        //feasible_solution_calculator.start(st);
         conflicting_data_id conflict_id;
         conflict_id=feasible_solution_calculator.return_conflict_id_pack();
 
@@ -798,19 +720,17 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             for(int a=0;a<cdp->firing_data[0].size()*2;a++)
             {
                 bool found=false;
-                for(int b=0;b<st->r_id.size();b++)
+                for(int b=0;b<st->r_id_size;b++)
                 {
                     if(st->r_id[b].id==a && st->r_id[b].basic==true)
                     {
-                        //cdp->weight_matrix.push_back(st.rhs[b]*st.basic_var[b][a]);
-                        weight_matrix_raw.push_back(st->rhs[b]*st->basic_var[b][a]);
+                        weight_matrix_raw.push_back(st->rhs[b]*st->basic_var[b*st->basic_var_size_row+b]);
                         found=true;
                         break;
                     }
                 }
                 if(found==false)
                 {
-                    //cdp->weight_matrix.push_back(0);
                     weight_matrix_raw.push_back(0);
                 }
             }
@@ -1066,6 +986,14 @@ void simplex_solver_data_preparation_class::print_message()
         cout<<message;
         pthread_mutex_unlock(&lock_1);
     }
+}
+
+simplex_solver_data_preparation_class::simplex_solver_data_preparation_class(vector<converted_data_pack> &cdps,datapack_structure_defination* ds,ann* network1)
+{
+    network=network1;
+    data_structure=ds;
+    lpp_solver1.set_training_settings(ds->lower_firing_constrain_rhs,ds->upper_not_firing_constrain_rhs); 
+    cdp=cdps;
 }
 
 //core_class
@@ -1535,12 +1463,45 @@ void core_class::train_core()
     message="\ntotal no of c_data_packs after big c_datapacks handling= "+to_string(c_datapacks.size());
     print_message();
     //this is the place for parallelization process.
-    //c_datapacks are ready for processing here.
-    simplex_solver(c_datapacks,ds,network1);
-    cout<<"\ncheck1";
-    int gh;cin>>gh;
-    //for(int a=0;a<no_of_threads;a++)
-    //{   thread_vec[a]=thread(&simplex_solver_data_preparation_class::lp_solver,lpp_solver_vec[a]);}
+    vector<vector<converted_data_pack>> c_datapacks_vector;
+    message.clear();
+    message="\narranging c_datapacks for "+to_string(no_of_threads)+" threads..........";
+    print_message();
+    c_data_packs_division_for_multi_threading(c_datapacks_vector,c_datapacks,no_of_threads);
+    point1:
+    if(no_of_threads!=c_datapacks_vector.size())
+    {
+        message.clear();
+        message="\nSetting the no_of_threads to "+to_string(c_datapacks_vector.size());
+        print_message();
+        no_of_threads=c_datapacks_vector.size();
+    }
+    //memory_optimization4 : turn  vector<simplex_solver_data_preparation_class> to  vector<simplex_solver_data_preparation_class*>       
+    vector<simplex_solver_data_preparation_class> lpp_solver_vec;
+    for(int a=0;a<c_datapacks_vector.size();a++)
+    {
+        simplex_solver_data_preparation_class lpp_solver=simplex_solver_data_preparation_class(c_datapacks_vector[a],&ds,&network1);//initializing the obj of the class   
+        lpp_solver_vec.push_back(lpp_solver);
+    }
+    vector<thread> thread_vec(no_of_threads);
+    //thread* progress_diaplay_thread;
+    message.clear();
+    message=" lpp_solver_vec size="+to_string(lpp_solver_vec.size());
+    print_message();
+    //lpp solvers will start now.........
+    for(int a=0;a<no_of_threads;a++)
+    {   thread_vec[a]=thread(&simplex_solver_data_preparation_class::lp_solver,lpp_solver_vec[a]);}
+    //int progress_bar_error;
+    //if(pds==true)
+    //{   progress_diaplay_thread=new thread(&core_class::display_training_progress,this);}
+    for(int a=0;a<no_of_threads;a++)
+    {   thread_vec[a].join();}
+    lpp_solver_vec.clear();
+    thread_vec.clear();
+    c_datapacks.clear();
+    c_datapacks_vector.clear();
+    //if(pds==true)
+    //{   progress_diaplay_thread->join();}
 }
 
 int core_class::size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapacks)
@@ -1549,6 +1510,49 @@ int core_class::size_of_c_datapacks_vector(vector<converted_data_pack> &c_datapa
     for(int a=0;a<c_datapacks.size();a++)
     {   sum+=c_datapacks[a].firing_data.size();}
     return sum;
+}
+
+void core_class::c_data_packs_division_for_multi_threading(vector<vector<converted_data_pack>> &c_datapacks_vector,vector<converted_data_pack> &c_datapacks,int no_of_threads)
+{
+    int total_data=0;
+    for(int a=0;a<c_datapacks.size();a++)
+    {   total_data+=c_datapacks[a].firing_data.size();}
+    int data_for_each_thread=total_data/no_of_threads;
+    vector<converted_data_pack> c_datapacks_new;
+    c_datapacks_new.clear();
+    c_datapacks_vector.clear();
+    message.clear();
+    message="\nno of c_datapacks= "+to_string(c_datapacks.size());
+    print_message();
+    for(int a=0;a<no_of_threads;a++)
+    {
+        int b=c_datapacks.size()-1;
+        if(b<0)
+        {   continue;}
+        while(size_of_c_datapacks_vector(c_datapacks_new)<data_for_each_thread)
+        {                
+            c_datapacks_new.push_back(c_datapacks[b]);
+            c_datapacks.erase(c_datapacks.begin()+b);
+            b--;
+            if(b<0)
+            {   break;}
+        }
+        c_datapacks_vector.push_back(c_datapacks_new);
+        c_datapacks_new.clear();
+    }
+    int sum=0;
+    for(int a=0;a<c_datapacks_vector.size();a++)
+    {   sum+=c_datapacks_vector[a].size();
+        message.clear();
+        message="\na= "+to_string(a)+" size= "+to_string(c_datapacks_vector[a].size());
+        print_message();
+    }
+    message.clear();
+    message="\nno of c_datapacks in c_datapacks_vector= "+to_string(sum);
+    print_message();
+    message.clear();
+    message="\nc_data_packs size= "+to_string(c_datapacks.size());
+    print_message();
 }
 
 void core_class::network_structure_modifier()
