@@ -54,13 +54,13 @@ void display_st(simplex_table_cuda *st)
 
         for(int c=0;c<st->basic_var_size_col;c++)
         {
-            file1<<st->basic_var[a*st->basic_var_size_row+c]<<",";
+            file1<<st->basic_var[a*st->basic_var_size_col+c]<<",";
         }
         for(int c=0;c<st->slack_var_size_col;c++)
         {
-            file1<<st->slack_var[a*st->slack_var_size_row+c]<<",";
+            file1<<st->slack_var[a*st->slack_var_size_col+c]<<",";
         }
-        file1/*<<st.z_col[a]<<","*/<<st->rhs[a]<<","/*<<st->theta[a]<<","*/;
+        file1<<","/*<<st.z_col[a]<<","*/<<st->rhs[a]<<","/*<<st->theta[a]<<","*/;
 
         file1<<"\n";
     }
@@ -96,7 +96,7 @@ bool modified_simplex_solver::make_solution_feasible::termination_condition_chec
     return status;
 }
 
-long double modified_simplex_solver::make_solution_feasible::round_to_zero(long double input)
+double modified_simplex_solver::make_solution_feasible::round_to_zero(double input)
 {
     if(input<0.001 && input>-0.001)
     {   return input;}//0;}
@@ -176,7 +176,7 @@ void modified_simplex_solver::make_solution_feasible::simplex_table_modifier(int
         basic_point=false;
     }
 
-    long double multiplying_element;
+    double multiplying_element;
     for(int a=0;a<st->basic_var.size();a++)
     {
         //multiplying element finder
@@ -230,7 +230,7 @@ void modified_simplex_solver::make_solution_feasible::simplex_table_modifier(int
         //basic_plus_slack_plus_z_plus_rhs_temp.push_back(var1);
     }//canny data crash point
     for(int b=0;b<st->slack_var[p_row_index].size();b++)
-    {   buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->slack_var[p_row_index][b]);}// bug found long double to float conversion
+    {   buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->slack_var[p_row_index][b]);}// bug found double to float conversion
     //buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->z_col[p_row_index]);
     buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->rhs[p_row_index]);
 
@@ -243,15 +243,14 @@ void modified_simplex_solver::make_solution_feasible::simplex_table_modifier(int
 
 void modified_simplex_solver::make_solution_feasible::conflicting_data_finder(simplex_table* st)
 {
-    conflict_id.conflict_id_present=true;
-    conflict_id.id.clear();
+    conflict_id.clear();
     for(int a=0;a<st->r_id.size();a++)
     {
         if(st->r_id[a].slack==true)
         {
             if(st->slack_var[a][st->r_id[a].id-st->basic_var[a].size()]<0 && st->rhs[a]>0) //a bug may be present here.
             {
-                conflict_id.id.push_back(a);
+                conflict_id.push_back(a);
             }
         }
     }
@@ -278,7 +277,7 @@ void modified_simplex_solver::make_solution_feasible::pivot_element_finder(simpl
         int row_with_negative_slack;
             //row havaing negative slack finder
         bool p_col_found=false;
-        int row_skip=1;
+        //int row_skip=1;
         bool row_with_negative_slack_found=false;
         for(int a=0;a<st->r_id.size();a++)
         {
@@ -334,8 +333,7 @@ void modified_simplex_solver::make_solution_feasible::pivot_element_finder(simpl
             }
             else
             {
-                conflict_id.id.clear();
-                conflict_id.conflict_id_present=false;
+                conflict_id.clear();
                 st->theta.clear();
                 for(int a=0;a<st->r_id.size();a++)
                 {
@@ -343,13 +341,13 @@ void modified_simplex_solver::make_solution_feasible::pivot_element_finder(simpl
                     {
                         if(st->basic_var[a][p_col_index]==0)
                         {
-                            long double var1=0;
+                            double var1=0;
                             st->theta.push_back(var1);
                         }
                         else
                         {
-                            long double rhs=st->rhs[a],basic_var=st->basic_var[a][p_col_index];//if long double is not used than precision problem may occur which may result in looping which even bland's rule fails to solve
-                            long double calc=rhs/basic_var;
+                            double rhs=st->rhs[a],basic_var=st->basic_var[a][p_col_index];//if double is not used than precision problem may occur which may result in looping which even bland's rule fails to solve
+                            double calc=rhs/basic_var;
                             st->theta.push_back(calc);
                         }
                     }
@@ -362,19 +360,19 @@ void modified_simplex_solver::make_solution_feasible::pivot_element_finder(simpl
                         }
                         else
                         {
-                            long double rhs=st->rhs[a],slack_var=st->slack_var[a][temp_col_index];
-                            long double calc=rhs/slack_var;
+                            double rhs=st->rhs[a],slack_var=st->slack_var[a][temp_col_index];
+                            double calc=rhs/slack_var;
                             st->theta.push_back(calc);
                         }
                     }
                 }
                 //pivot row finder
-                //vector<long double> sorted_theta;
+                //vector<double> sorted_theta;
                 buffer_obj.sorted_theta.clear();
                 buffer_obj.sorted_theta.insert(buffer_obj.sorted_theta.begin(),st->theta.begin(),st->theta.end());
                 //sorted_theta=st->theta;
                 sort(buffer_obj.sorted_theta.begin(),buffer_obj.sorted_theta.end());
-                long double smallest_positive_theta;
+                double smallest_positive_theta;
                 for(int a=0;a<buffer_obj.sorted_theta.size();a++)
                 {
                     if(buffer_obj.sorted_theta[a]>0)
@@ -452,7 +450,7 @@ bool modified_simplex_solver::make_solution_feasible::add_index_data(int p_col,i
 bool modified_simplex_solver::make_solution_feasible::cyclic_bug_present()
 {   return cyclic_bug_present_var;}
 
-conflicting_data_id modified_simplex_solver::make_solution_feasible::return_conflict_id_pack()
+vector<int> modified_simplex_solver::make_solution_feasible::return_conflict_id_pack()
 {   return conflict_id;}
 
 void modified_simplex_solver::make_solution_feasible::start(simplex_table* st)
@@ -577,7 +575,7 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             for(int b=0;b<cdp->firing_data[a].size();b++)
             {   
                 st->basic_var[a*cdp->firing_data[a].size()*2+b*2]=cdp->firing_data[a][b];
-                st->basic_var[a*cdp->firing_data.size()*2+b*2+1]=cdp->firing_data[a][b]*-1;
+                st->basic_var[a*cdp->firing_data[a].size()*2+b*2+1]=cdp->firing_data[a][b]*-1;
             }
             //entering slack var data
             for(int b=0;b<st->r_id_size;b++)
@@ -611,14 +609,14 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
         }
         //launch cuda kernel here
         simplex_solver(st);
+        //cout<<"\nrow: "<<st->basic_var_size_row<<" col: "<<st->basic_var_size_col;
         display_st(st);
         cout<<"\ndone!";
         int gh;cin>>gh;
         //feasible_solution_calculator.start(st);
-        conflicting_data_id conflict_id;
-        conflict_id=feasible_solution_calculator.return_conflict_id_pack();
+        vector<int> conflict_id_vec=feasible_solution_calculator.return_conflict_id_pack();
 
-        if(conflict_id.conflict_id_present==true)
+        if(conflict_id_vec.size()>0)
         {
             conflicting_data.firing_data.clear();
             conflicting_data.not_firing_data.clear();
@@ -630,12 +628,12 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
                 message="\nconflicting databefore erasing:\n firing data size= "+to_string(cdp->firing_data.size())+"\n";
                 print_message();
             }
-            if(conflict_id.id.size()==cdp->firing_data.size() && cdp->firing_data.size()==1)
+            if(conflict_id_vec.size()==cdp->firing_data.size() && cdp->firing_data.size()==1)
             {
                 //cout<<"\nbingo!!";
                 cdp->corupt_pack=true;
             }
-            else if(conflict_id.id.size()==cdp->firing_data.size())//for handling 0:0 bug
+            else if(conflict_id_vec.size()==cdp->firing_data.size())//for handling 0:0 bug
             {   
                 int firing_data_limit=cdp->firing_data.size()/2;
                 int not_firing_data_limit=cdp->not_firing_data.size()/2;
@@ -660,17 +658,17 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             else
             {
                 int count1=0;
-                for(int a=conflict_id.id.size()-1;a>=0;a--)
+                for(int a=conflict_id_vec.size()-1;a>=0;a--)
                 {
                     //save the conflicting data in a obj of converted data pack.
-                    conflicting_data.firing_data.push_back(cdp->firing_data[conflict_id.id[a]]); //copying the conflicting data
+                    conflicting_data.firing_data.push_back(cdp->firing_data[conflict_id_vec[a]]); //copying the conflicting data
                     if(display_iterations==true)
                     {   
                         message.clear();
-                        message="erasing id= "+to_string(conflict_id.id[a])+",";
+                        message="erasing id= "+to_string(conflict_id_vec[a])+",";
                         print_message();
                     }
-                    cdp->firing_data.erase(cdp->firing_data.begin()+conflict_id.id[a]); //erasing the conflicting data
+                    cdp->firing_data.erase(cdp->firing_data.begin()+conflict_id_vec[a]); //erasing the conflicting data
                     if(display_iterations==true)
                     {   
                         message.clear();

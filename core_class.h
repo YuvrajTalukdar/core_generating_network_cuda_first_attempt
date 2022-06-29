@@ -41,12 +41,6 @@ struct converted_data_pack
     bool corupt_pack=false;
 };
 
-struct conflicting_data_id
-{
-    vector<int> id;
-    bool conflict_id_present=false;
-};
-
 struct id
 {
     bool slack=false,basic=false,z=false,rhs=false,theta=false;
@@ -65,7 +59,7 @@ struct simplex_table_cuda
     int slack_var_size_row,slack_var_size_col;
     double* rhs;//no_of_rows-z_row//actual double
     int rhs_size;
-    long double* theta;//no_of_rows-z_row//actual long double
+    double* theta;//no_of_rows-z_row//actual double
     int theta_size;
 };
 
@@ -89,7 +83,7 @@ class modified_simplex_solver{
         vector<vector<float>> slack_var; //no_of_columns-basic_var-rhs-theta*no_of_rows-z_row
         //vector<float> z_col;//no_of_rows-z_row
         vector<double> rhs;//no_of_rows-z_row//actual double
-        vector<long double> theta;//no_of_rows-z_row//actual long double
+        vector<double> theta;//no_of_rows-z_row//actual double
         //vector<float> z_row;//no_of_columns
     };
 
@@ -109,11 +103,11 @@ class modified_simplex_solver{
 
         void display_st(simplex_table_cuda &st);
 
-        long double round_to_zero(long double input);
+        double round_to_zero(double input);
         struct buffer
         {
             vector<float> basic_plus_slack_plus_z_plus_rhs_temp;
-            vector<long double> sorted_theta;
+            vector<double> sorted_theta;
             vector<int> p_row_index;
             vector<int> p_col_index;
         }buffer_obj;
@@ -122,7 +116,7 @@ class modified_simplex_solver{
 
         void simplex_table_modifier(int p_row_index,int p_col_index,simplex_table* st);
 
-        conflicting_data_id conflict_id;
+        vector<int> conflict_id;
 
         void conflicting_data_finder(simplex_table* st);
 
@@ -132,7 +126,7 @@ class modified_simplex_solver{
         public:
         bool cyclic_bug_present();
 
-        conflicting_data_id return_conflict_id_pack();
+        vector<int> return_conflict_id_pack();
 
         void start(simplex_table* st);
 
