@@ -65,7 +65,13 @@ struct simplex_table_cuda
 
 void display_st(simplex_table_cuda *st);
 
-void simplex_solver(simplex_table_cuda *st);
+vector<int> simplex_solver(simplex_table_cuda *st);
+
+struct buffer
+{
+    vector<int> p_row_index;
+    vector<int> p_col_index;
+};
 
 class modified_simplex_solver{
     private:
@@ -101,16 +107,10 @@ class modified_simplex_solver{
 
         bool termination_condition_checker(simplex_table* st);
 
-        void display_st(simplex_table_cuda &st);
-
         double round_to_zero(double input);
-        struct buffer
-        {
-            vector<float> basic_plus_slack_plus_z_plus_rhs_temp;
-            vector<double> sorted_theta;
-            vector<int> p_row_index;
-            vector<int> p_col_index;
-        }buffer_obj;
+        
+        vector<double> sorted_theta;
+        buffer buffer_obj;
         
         bool add_index_data(int p_col,int p_row);
 
@@ -133,6 +133,8 @@ class modified_simplex_solver{
     }feasible_solution_calculator;
     
     void print_message();
+
+    void free_simplex_table_from_ram(simplex_table_cuda *st);
 
     public:
     static bool check_for_corrupt_cdp(converted_data_pack* cdp);

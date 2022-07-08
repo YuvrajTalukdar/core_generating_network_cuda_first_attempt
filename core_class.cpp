@@ -2,11 +2,16 @@
 
 using namespace std;
 
-
-//modified_simplex_solver::make_solution_feasible
 void display_st(simplex_table_cuda *st)
 {
-    fstream file1("simplex_table.csv",ios::out);
+    time_t now = time(0);
+    tm* localtm = localtime(&now);
+    int hr,min,sec;
+    hr=localtm->tm_hour;
+    min=localtm->tm_min;
+    sec=localtm->tm_sec;
+    string rand=to_string(hr)+"_"+to_string(min)+"_"+to_string(sec);
+    fstream file1("simplex_table_"+rand+".csv",ios::out);
     file1<<",";
     for(int a=0;a<st->c_id_size;a++)
     {
@@ -120,11 +125,6 @@ void modified_simplex_solver::make_solution_feasible::print_message()
 
 void modified_simplex_solver::make_solution_feasible::simplex_table_modifier(int p_row_index,int p_col_index,simplex_table* st)
 {
-    /*if(fg==1)
-    {
-        display_st(*st);
-        int gh;cin>>gh;
-    }*/
     //row id changer
     st->r_id[p_row_index].basic=st->c_id[p_col_index].basic;
     st->r_id[p_row_index].id=st->c_id[p_col_index].id;
@@ -217,28 +217,6 @@ void modified_simplex_solver::make_solution_feasible::simplex_table_modifier(int
         message="\np_col_index= "+to_string(p_col_index)+" multiplying element= "+to_string(multiplying_element);
         print_message();
     }
-    //multiplying_element=st->z_row[p_col_index];
-    //vector<float> basic_plus_slack_plus_z_plus_rhs_temp;
-    //basic_plus_slack_plus_z_plus_rhs_temp.clear();
-    buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.clear();
-    buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.resize(st->basic_var[p_row_index].size());//bug found memory allocation problem
-    for(int b=0;b<st->basic_var[p_row_index].size();b++)
-    {   
-        float var1=st->basic_var[p_row_index][b];
-        int s1=buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.size();
-        buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp[b]=var1;
-        //basic_plus_slack_plus_z_plus_rhs_temp.push_back(var1);
-    }//canny data crash point
-    for(int b=0;b<st->slack_var[p_row_index].size();b++)
-    {   buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->slack_var[p_row_index][b]);}// bug found double to float conversion
-    //buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->z_col[p_row_index]);
-    buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp.push_back(st->rhs[p_row_index]);
-
-    /*for(int b=0;b<st->z_row.size();b++)
-    {
-        //cout<<"\nz_row= "<<st->z_row[b]<<" basic_s_z_r_t= "<<basic_plus_slack_plus_z_plus_rhs_temp[b];
-        st->z_row[b]=(st->z_row[b]-multiplying_element*buffer_obj.basic_plus_slack_plus_z_plus_rhs_temp[b]);
-    }*/
 }
 
 void modified_simplex_solver::make_solution_feasible::conflicting_data_finder(simplex_table* st)
@@ -368,15 +346,15 @@ void modified_simplex_solver::make_solution_feasible::pivot_element_finder(simpl
                 }
                 //pivot row finder
                 //vector<double> sorted_theta;
-                buffer_obj.sorted_theta.clear();
-                buffer_obj.sorted_theta.insert(buffer_obj.sorted_theta.begin(),st->theta.begin(),st->theta.end());
+                sorted_theta.clear();
+                sorted_theta.insert(sorted_theta.begin(),st->theta.begin(),st->theta.end());
                 //sorted_theta=st->theta;
-                sort(buffer_obj.sorted_theta.begin(),buffer_obj.sorted_theta.end());
+                sort(sorted_theta.begin(),sorted_theta.end());
                 double smallest_positive_theta;
-                for(int a=0;a<buffer_obj.sorted_theta.size();a++)
+                for(int a=0;a<sorted_theta.size();a++)
                 {
-                    if(buffer_obj.sorted_theta[a]>0)
-                    {   smallest_positive_theta=buffer_obj.sorted_theta[a];
+                    if(sorted_theta[a]>0)
+                    {   smallest_positive_theta=sorted_theta[a];
                         break;
                     }
                 }
@@ -468,6 +446,16 @@ bool modified_simplex_solver::check_for_corrupt_cdp(converted_data_pack* cdp)
     }
     catch(exception &e)
     {   return true;}
+}
+
+void modified_simplex_solver::free_simplex_table_from_ram(simplex_table_cuda *st)
+{
+    free(st->basic_var);
+    free(st->c_id);
+    free(st->r_id);
+    free(st->rhs);
+    free(st->slack_var);
+    free(st->theta);
 }
 
 bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
@@ -608,13 +596,12 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             x1++;
         }
         //launch cuda kernel here
-        simplex_solver(st);
-        //cout<<"\nrow: "<<st->basic_var_size_row<<" col: "<<st->basic_var_size_col;
-        display_st(st);
-        cout<<"\ndone!";
-        int gh;cin>>gh;
+        vector<int> conflict_id_vec=simplex_solver(st);
+        //display_st(st);
+        //cout<<"\ndone!";
+        //int gh;cin>>gh;
         //feasible_solution_calculator.start(st);
-        vector<int> conflict_id_vec=feasible_solution_calculator.return_conflict_id_pack();
+        //vector<int> conflict_id_vec=feasible_solution_calculator.return_conflict_id_pack();
 
         if(conflict_id_vec.size()>0)
         {
@@ -630,7 +617,7 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             }
             if(conflict_id_vec.size()==cdp->firing_data.size() && cdp->firing_data.size()==1)
             {
-                //cout<<"\nbingo!!";
+                cout<<"\ncorrupt cdp found!";
                 cdp->corupt_pack=true;
             }
             else if(conflict_id_vec.size()==cdp->firing_data.size())//for handling 0:0 bug
@@ -651,9 +638,13 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
                 conflicting_data.firing_label=cdp->firing_label;
                 conflicting_data.firing_neuron_index=cdp->firing_neuron_index;
                 if(check_for_corrupt_cdp(cdp)==false)
-                start_solver(cdp);
+                {
+                    free_simplex_table_from_ram(st);
+                    delete st;
+                    start_solver(cdp);
+                }
                 else
-                cout<<"\ncheck2";
+                {   cout<<"\ncorrupt cdp found 2";};
             }
             else
             {
@@ -704,9 +695,13 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
                     cout<<"firing_size= "<<cdp->firing_data.size()<<" not_firing_size= "<<cdp->not_firing_data.size()<<endl;
                 }
                 if(check_for_corrupt_cdp(cdp)==false)
-                start_solver(cdp); //calling start_solver function with non conflicting data.
+                {   
+                    free_simplex_table_from_ram(st);
+                    delete st;
+                    start_solver(cdp);
+                } //calling start_solver function with non conflicting data.
                 else
-                cout<<"\ncheck1";
+                {   cout<<"\ncorrupt cdp found 2";}
             }
         }
         else
@@ -715,31 +710,45 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             vector<double> weight_matrix_raw;
             weight_matrix_raw.clear();
             //push the raw solution in the converted data pack.
-            for(int a=0;a<cdp->firing_data[0].size()*2;a++)
+
+            for(int a=0;a<st->basic_var_size_col;a++)
             {
                 bool found=false;
                 for(int b=0;b<st->r_id_size;b++)
                 {
                     if(st->r_id[b].id==a && st->r_id[b].basic==true)
                     {
-                        weight_matrix_raw.push_back(st->rhs[b]*st->basic_var[b*st->basic_var_size_row+b]);
+                        weight_matrix_raw.push_back(st->rhs[b]*st->basic_var[b*st->basic_var_size_col+a]);
                         found=true;
+                        //cout<<"\ncheck1";
                         break;
                     }
                 }
                 if(found==false)
                 {
+                    //cout<<"\ncheck2";
                     weight_matrix_raw.push_back(0);
                 }
             }
             //pushing the calculated solution in the weight matrix
-            for(int a=0;a<cdp->firing_data[0].size()*2;a+=2)
+            for(int a=0;a<st->basic_var_size_col;a+=2)
             {
                 cdp->weight_matrix.push_back(weight_matrix_raw[a]-weight_matrix_raw[a+1]);
             }
-            //as cdp is an address of the original cdp obj is already present in the previous function.
+            /*cout<<"\nfd: ";
+            for(int b=0;b<cdp->firing_data[0].size();b++)
+            {   cout<<cdp->firing_data[0][b]<<",";}
+            cout<<"\nnfd: ";
+            for(int b=0;b<cdp->not_firing_data[0].size();b++)
+            {   cout<<cdp->not_firing_data[0][b]<<",";}
+            cout<<"\nweight: ";
+            for(int b=0;b<cdp->weight_matrix.size();b++)
+            {   cout<<cdp->weight_matrix[b]<<",";}
+            display_st(st);
+            int gh;cin>>gh;*/
+            free_simplex_table_from_ram(st);
+            delete st;
         }
-        delete st;
         return true;
     }
     else//this is for avoiding compilation warning
@@ -916,7 +925,12 @@ void simplex_solver_data_preparation_class::lp_solver()
         //   1a. provide the output neuron id. (training for which output neuron or which label. First neuron = label 2 second neuron = label 4)
         //   2b. push the weight matrix
         if(cdp[a].corupt_pack==false)
-        {   
+        {
+            /*cout<<"\nweight added total: "<<network->path.size()<<" ";
+            for(int b=0;b<cdp[a].weight_matrix.size();b++)
+            {
+                cout<<cdp[a].weight_matrix[b]<<",";
+            }*/
             pthread_mutex_lock(&lock);
             network->create_new_path(cdp[a].weight_matrix,cdp[a].firing_neuron_index);
             pthread_mutex_unlock(&lock);
@@ -937,19 +951,6 @@ void simplex_solver_data_preparation_class::lp_solver()
 
     if(conflicting_data_buffer_outer.conflicting_data_buffer_vector.size()>0)
     {
-        //objective function coefficient calculation
-        /*int d=0;
-        for(int a=0;a<conflicting_data_buffer_outer.conflicting_data_buffer_vector.size();a++)
-        {
-            conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].objective_function_coefficients.resize(data_structure->no_of_elements_in_each_record);
-            for(int b=0;b<data_structure->no_of_elements_in_each_record;b++)
-            {
-                for(d=0;d<conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].firing_data.size();d++){
-                    conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].objective_function_coefficients[b]+=conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].firing_data[d][b];
-                }
-                conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].objective_function_coefficients[b]=conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].objective_function_coefficients[b]/d;
-            }
-        }*/
         for(int a=0;a<conflicting_data_buffer_outer.conflicting_data_buffer_vector.size();a++)
         {
             if(conflicting_data_buffer_outer.conflicting_data_buffer_vector[a].firing_data.size()==0)
