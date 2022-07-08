@@ -183,12 +183,15 @@ __global__ void find_row_with_negative_slack_kernel(simplex_table_cuda st,int *r
     if(index<st.slack_var_size_row)
     {
         //printf("\nindex: %d basic_size_row: %d basic_col_size: %d slack_index: %d id: %d  slack_row: %d slack_col: %d rhs_size: %d",index,st.basic_var_size_row,st.basic_var_size_col,index*st.slack_var_size_col+(st.r_id[index].id-st.basic_var_size_col),st.r_id[index].id,st.slack_var_size_row,st.slack_var_size_col,st.rhs_size);
-        int r_id_stuff=st.r_id[index].id-st.basic_var_size_col;
-        int slack_index=index*st.slack_var_size_col+(r_id_stuff);
-        if(st.slack_var[slack_index]<0 && st.rhs[index]>=0)//originally it was just rhs>0, but now i feel it shouls be >=. Need further testing
+        if(st.r_id[index].slack==true)
         {
-            if(*row_with_negative_slack==-1 || *row_with_negative_slack>index)
-            {   *row_with_negative_slack=index;}
+            //int r_id_stuff=st.r_id[index].id-st.basic_var_size_col;
+            //int slack_index=index*st.slack_var_size_col+(r_id_stuff);
+            if(st.slack_var[index*st.slack_var_size_col+(st.r_id[index].id-st.basic_var_size_col)]<0 && st.rhs[index]>=0)//originally it was just rhs>0, but now i feel it shouls be >=. Need further testing
+            {
+                if(*row_with_negative_slack==-1 || *row_with_negative_slack>index)
+                {   *row_with_negative_slack=index;}
+            }
         }
     }
 }
