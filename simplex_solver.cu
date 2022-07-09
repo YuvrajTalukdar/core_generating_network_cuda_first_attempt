@@ -329,6 +329,8 @@ int pivote_row_finder(simplex_table_cuda st_d,int pivote_col)//ok check
             }
         }
     }
+    free(theta);
+    cudaFree(st_d.theta);
 
     return pivote_row_index;
 }
@@ -382,7 +384,6 @@ void free_simplex_table_from_vram(simplex_table_cuda st_d)//need to be checked
     cudaFree(st_d.r_id);
     cudaFree(st_d.rhs);
     cudaFree(st_d.slack_var);
-    cudaFree(st_d.theta);
 }
 
 vector<int> pivot_element_finder(simplex_table_cuda st_d,simplex_table_cuda* st)

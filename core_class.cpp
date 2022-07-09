@@ -456,6 +456,7 @@ void modified_simplex_solver::free_simplex_table_from_ram(simplex_table_cuda *st
     free(st->rhs);
     free(st->slack_var);
     free(st->theta);
+    delete st;
 }
 
 bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
@@ -479,7 +480,7 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
         cout<<"\nnot_firing_size= "<<cdp->not_firing_data.size();
         return false;
     }
-    else if(corrupt_cdp==false)
+    else
     {   
         st->c_id_size=cdp->firing_data[0].size()*2+cdp->firing_data.size()+cdp->not_firing_data.size()+3;
         st->c_id=(id*)malloc(sizeof(id)*st->c_id_size);
@@ -619,6 +620,7 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             {
                 cout<<"\ncorrupt cdp found!";
                 cdp->corupt_pack=true;
+                free_simplex_table_from_ram(st);
             }
             else if(conflict_id_vec.size()==cdp->firing_data.size())//for handling 0:0 bug
             {   
@@ -640,11 +642,13 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
                 if(check_for_corrupt_cdp(cdp)==false)
                 {
                     free_simplex_table_from_ram(st);
-                    delete st;
                     start_solver(cdp);
                 }
                 else
-                {   cout<<"\ncorrupt cdp found 2";};
+                {   
+                    free_simplex_table_from_ram(st);
+                    cout<<"\ncorrupt cdp found 2";
+                }
             }
             else
             {
@@ -697,11 +701,13 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
                 if(check_for_corrupt_cdp(cdp)==false)
                 {   
                     free_simplex_table_from_ram(st);
-                    delete st;
                     start_solver(cdp);
                 } //calling start_solver function with non conflicting data.
                 else
-                {   cout<<"\ncorrupt cdp found 2";}
+                {   
+                    free_simplex_table_from_ram(st);
+                    cout<<"\ncorrupt cdp found 2";
+                }
             }
         }
         else
@@ -747,12 +753,9 @@ bool modified_simplex_solver::start_solver(converted_data_pack* cdp)
             display_st(st);
             int gh;cin>>gh;*/
             free_simplex_table_from_ram(st);
-            delete st;
         }
         return true;
     }
-    else//this is for avoiding compilation warning
-    {   return false;}
 }
 
 bool modified_simplex_solver::cyclic_bug_present()
