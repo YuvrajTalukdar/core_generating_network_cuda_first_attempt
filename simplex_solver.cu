@@ -91,11 +91,13 @@ __global__ void get_multiplying_elements(simplex_table_cuda st,int p_col_index,f
 
 void copy_table_to_ram(simplex_table_cuda *st,simplex_table_cuda *st_d);
 
-void simplex_table_modifier(simplex_table_cuda st_d,/*simplex_table_cuda *st,*/float *pe_d,float *multiplying_element_arr_d,int p_row_index,int p_col_index)//ok chech
+void simplex_table_modifier(simplex_table_cuda st_d,/*simplex_table_cuda *st,*/float *pe_d,float *multiplying_element_arr_d,int p_row_index,int p_col_index,cudaStream_t *stream1)//ok chech
 {
     int total_no_of_threads_required;
     int no_of_thread,no_of_blocks;
-    change_row_id<<<1,5>>>(st_d,p_row_index,p_col_index);
+    cudaStream_t stream2;
+    cudaStreamCreate(&stream2);
+    change_row_id<<<1,5,0,stream2>>>(st_d,p_row_index,p_col_index);
     //pivot row modifiew
     total_no_of_threads_required=st_d.basic_var_size_col+st_d.slack_var_size_col+1;//extra 1 for rhs
     no_of_blocks=total_no_of_threads_required/512;
@@ -103,8 +105,7 @@ void simplex_table_modifier(simplex_table_cuda st_d,/*simplex_table_cuda *st,*/f
     {   no_of_thread=total_no_of_threads_required;no_of_blocks=1;}
     else
     {   no_of_thread=512;no_of_blocks++;}
-    pivot_row_modifier<<<no_of_blocks,no_of_thread>>>(st_d,pe_d,p_row_index,p_col_index);
-    cudaDeviceSynchronize();
+    pivot_row_modifier<<<no_of_blocks,no_of_thread,0,*stream1>>>(st_d,pe_d,p_row_index,p_col_index);
     no_of_blocks=st_d.basic_var_size_row/512;
     if(no_of_blocks==0)
     {   no_of_thread=st_d.basic_var_size_row;no_of_blocks++;}
@@ -114,7 +115,7 @@ void simplex_table_modifier(simplex_table_cuda st_d,/*simplex_table_cuda *st,*/f
         if(st_d.basic_var_size_row%512!=0)
         {   no_of_blocks++;}
     }
-    get_multiplying_elements<<<no_of_blocks,no_of_thread>>>(st_d,p_col_index,multiplying_element_arr_d);
+    get_multiplying_elements<<<no_of_blocks,no_of_thread,0,*stream1>>>(st_d,p_col_index,multiplying_element_arr_d);
     //copy_table_to_ram(st,&st_d);
     //display_st(st);
     //cout<<"\np row modified";
@@ -129,8 +130,9 @@ void simplex_table_modifier(simplex_table_cuda st_d,/*simplex_table_cuda *st,*/f
     else
     {   no_of_thread=512;block_x++;}
     dim3 block_vec(block_x,block_y,1);
-    rest_of_row_modifier<<<block_vec,no_of_thread>>>(st_d,multiplying_element_arr_d,p_row_index,p_col_index);
-    cudaDeviceSynchronize();
+    rest_of_row_modifier<<<block_vec,no_of_thread,0,*stream1>>>(st_d,multiplying_element_arr_d,p_row_index,p_col_index);
+    cudaStreamSynchronize(stream2);
+    cudaStreamDestroy(stream2);
     //copy_table_to_ram(st,&st_d);
     //display_st(st);
     //cout<<"\nrest row modified";
@@ -151,7 +153,7 @@ __global__ void termination_condition_checker_kernel(simplex_table_cuda st,bool 
     }
 }
 
-bool termination_condition_checker(simplex_table_cuda st_d)//ok check
+bool termination_condition_checker(simplex_table_cuda st_d,cudaStream_t *stream1)//ok check
 {
     bool status=true;
     int no_of_threads,no_of_blocks=1;
@@ -168,8 +170,8 @@ bool termination_condition_checker(simplex_table_cuda st_d)//ok check
     bool *status_d;
     cudaMalloc(&status_d,sizeof(bool));
     cudaMemcpy(status_d,&status,sizeof(bool),cudaMemcpyHostToDevice);
-    termination_condition_checker_kernel<<<no_of_blocks,no_of_threads>>>(st_d,status_d);
-    cudaDeviceSynchronize();
+    termination_condition_checker_kernel<<<no_of_blocks,no_of_threads,0,*stream1>>>(st_d,status_d);
+    cudaStreamSynchronize(*stream1);
     cudaMemcpy(&status,status_d,sizeof(bool),cudaMemcpyDeviceToHost);
     cudaFree(status_d);
     //cout<<"\ntermination: "<<status;
@@ -196,7 +198,7 @@ __global__ void find_row_with_negative_slack_kernel(simplex_table_cuda st,int *r
     }
 }
 
-int find_row_with_negative_slack(simplex_table_cuda st_d)//ok check
+int find_row_with_negative_slack(simplex_table_cuda st_d,cudaStream_t *stream1)//ok check
 {
     int row_with_negative_slack=-1;
     int no_of_threads,no_of_blocks=1;
@@ -212,8 +214,8 @@ int find_row_with_negative_slack(simplex_table_cuda st_d)//ok check
     int *row_with_negative_slack_d;
     cudaMalloc(&row_with_negative_slack_d,sizeof(int));
     cudaMemcpy(row_with_negative_slack_d,&row_with_negative_slack,sizeof(int),cudaMemcpyHostToDevice);
-    find_row_with_negative_slack_kernel<<<no_of_blocks,no_of_threads>>>(st_d,row_with_negative_slack_d);
-    cudaDeviceSynchronize();
+    find_row_with_negative_slack_kernel<<<no_of_blocks,no_of_threads,0,*stream1>>>(st_d,row_with_negative_slack_d);
+    cudaStreamSynchronize(*stream1);
     cudaMemcpy(&row_with_negative_slack,row_with_negative_slack_d,sizeof(int),cudaMemcpyDeviceToHost);
     cudaFree(row_with_negative_slack_d);
 
@@ -292,7 +294,7 @@ __global__ void pivote_row_finder_kernel(simplex_table_cuda st,int pivote_col_in
     }
 }
 
-int pivote_row_finder(simplex_table_cuda st_d,int pivote_col)//ok check
+int pivote_row_finder(simplex_table_cuda st_d,int pivote_col,cudaStream_t *stream1)//ok check
 {
     int pivote_row_index=-1;
     st_d.theta_size=st_d.r_id_size;
@@ -310,8 +312,8 @@ int pivote_row_finder(simplex_table_cuda st_d,int pivote_col)//ok check
     else
     {   no_of_threads=st_d.slack_var_size_row;}
 
-    pivote_row_finder_kernel<<<no_of_blocks,no_of_threads>>>(st_d,pivote_col);
-    
+    pivote_row_finder_kernel<<<no_of_blocks,no_of_threads,0,*stream1>>>(st_d,pivote_col);
+    cudaStreamSynchronize(*stream1);
     double *theta;
     theta=(double*)malloc(sizeof(double)*st_d.theta_size);
     cudaMemcpy(theta,st_d.theta,sizeof(double)*st_d.theta_size,cudaMemcpyDeviceToHost);
@@ -394,25 +396,20 @@ vector<int> pivot_element_finder(simplex_table_cuda st_d,simplex_table_cuda* st)
     buffer buffer_obj;
     buffer_obj.p_col_index.clear();
     buffer_obj.p_row_index.clear();
-    //int iteration=0;
     float *multiplying_element_arr_d;
+    cudaStream_t stream1;
+    cudaStreamCreate(&stream1);
     cudaMalloc(&multiplying_element_arr_d,sizeof(float)*st->slack_var_size_row);
     do
     {
-        //display_st(st);
-        //cout<<"\niteration: "<<iteration<<" ";
-        //iteration++;
-        //int gh;cin>>gh;
-        row_with_negative_slack=find_row_with_negative_slack(st_d);//if not found it will return -1.
+        row_with_negative_slack=find_row_with_negative_slack(st_d,&stream1);//if not found it will return -1.
         //cout<<"\n\nrow_with_negative_slack= "<<row_with_negative_slack;
         if(row_with_negative_slack>=0)
         {
             p_col_index=pivote_col_finder(st_d,st,row_with_negative_slack);
-            cudaDeviceSynchronize();
             //cout<<"\npivote_col_index= "<<p_col_index;
             if(p_col_index<0)//it should have been ==-1 but to handle potential precision problem,//this function is to check if data is conflicting type
             {
-                //cout<<"\nconflict found!";
                 conflict_id=conflicting_data_finder(st_d);
                 break;
             }
@@ -421,21 +418,22 @@ vector<int> pivot_element_finder(simplex_table_cuda st_d,simplex_table_cuda* st)
                 cudaFree(st_d.theta);
                 st_d.theta_size=0;
             }
-            p_row_index=pivote_row_finder(st_d,p_col_index);
-            cudaDeviceSynchronize();
+            p_row_index=pivote_row_finder(st_d,p_col_index,&stream1);
             //cout<<"\npivote_row_index: "<<p_row_index;
             if(p_row_index<0)//bad_p_row_index_status
             {   break;}
             float *pe_d;
             cudaMalloc(&pe_d,sizeof(float));
-            get_pivot_element<<<1,1>>>(st_d,p_row_index,p_col_index,pe_d);
-            cudaDeviceSynchronize();
+            get_pivot_element<<<1,1,0,stream1>>>(st_d,p_row_index,p_col_index,pe_d);
+            cudaStreamSynchronize(stream1);
             //simplex_table_modifier
             if(!check_for_cyclic_bug(p_col_index,p_row_index,buffer_obj))//this is to check for cyclic bug
-            {   simplex_table_modifier(st_d,/*st,*/pe_d,multiplying_element_arr_d,p_row_index,p_col_index);}
+            {   
+                simplex_table_modifier(st_d,/*st,*/pe_d,multiplying_element_arr_d,p_row_index,p_col_index,&stream1);
+                cudaStreamSynchronize(stream1);
+            }
             else
             {   
-                //cout<<"\ncyclic bug";
                 conflict_id=conflicting_data_finder(st_d);
                 break;
             }//cyclic bug present
@@ -444,7 +442,8 @@ vector<int> pivot_element_finder(simplex_table_cuda st_d,simplex_table_cuda* st)
         else
         {   break;}
     } 
-    while(!termination_condition_checker(st_d));
+    while(!termination_condition_checker(st_d,&stream1));
+    cudaStreamDestroy(stream1);
     cudaFree(multiplying_element_arr_d);
     
     return conflict_id;
